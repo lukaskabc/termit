@@ -21,6 +21,7 @@ import cz.cvut.kbss.termit.dto.RdfsResource;
 import cz.cvut.kbss.termit.dto.Snapshot;
 import cz.cvut.kbss.termit.dto.assignment.TermOccurrences;
 import cz.cvut.kbss.termit.dto.filter.ChangeRecordFilterDto;
+import cz.cvut.kbss.termit.dto.listing.TermDefinitionDto;
 import cz.cvut.kbss.termit.dto.listing.TermDto;
 import cz.cvut.kbss.termit.exception.InvalidTermStateException;
 import cz.cvut.kbss.termit.exception.NotFoundException;
@@ -137,6 +138,11 @@ public class TermService implements RudService<Term>, ChangeRecordProvider<Term>
     public List<TermDto> findAll(Vocabulary vocabulary) {
         Objects.requireNonNull(vocabulary);
         return repositoryService.findAll(vocabulary);
+    }
+
+    public List<TermDefinitionDto> findAllWithDefinition(Vocabulary vocabulary) {
+        Objects.requireNonNull(vocabulary);
+        return repositoryService.findAllWithDefinition(vocabulary);
     }
 
     /**

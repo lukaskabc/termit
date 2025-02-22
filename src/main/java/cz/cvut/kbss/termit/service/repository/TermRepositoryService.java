@@ -21,6 +21,7 @@ import cz.cvut.kbss.jopa.model.MultilingualString;
 import cz.cvut.kbss.termit.dto.Snapshot;
 import cz.cvut.kbss.termit.dto.TermInfo;
 import cz.cvut.kbss.termit.dto.assignment.TermOccurrences;
+import cz.cvut.kbss.termit.dto.listing.TermDefinitionDto;
 import cz.cvut.kbss.termit.dto.listing.TermDto;
 import cz.cvut.kbss.termit.exception.AssetRemovalException;
 import cz.cvut.kbss.termit.exception.UnsupportedOperationException;
@@ -480,5 +481,9 @@ public class TermRepositoryService extends BaseAssetRepositoryService<Term, Term
     @Override
     public Optional<Term> findVersionValidAt(Term asset, Instant at) {
         return termDao.findVersionValidAt(asset, at);
+    }
+
+    public List<TermDefinitionDto> findAllWithDefinition(Vocabulary vocabulary) {
+        return termDao.findAllWithDefinition(vocabulary);
     }
 }

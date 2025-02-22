@@ -377,7 +377,8 @@ public class TextAnalysisService {
             try (final InputStream is = result.get().getInputStream()) {
                 resultString = StreamUtils.copyToString(is, StandardCharsets.UTF_8);
             }
-            generateAnnotationsForCombinedResult(resultString, termMap);
+            LOG.debug(resultString);
+            //generateAnnotationsForCombinedResult(resultString, termMap);
         } catch (WebServiceIntegrationException e) {
             throw e;
         } catch (HttpClientErrorException e) {

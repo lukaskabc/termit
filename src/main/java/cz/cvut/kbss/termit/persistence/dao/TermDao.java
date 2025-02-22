@@ -25,6 +25,7 @@ import cz.cvut.kbss.jopa.vocabulary.SKOS;
 import cz.cvut.kbss.termit.asset.provenance.ModifiesData;
 import cz.cvut.kbss.termit.dto.Snapshot;
 import cz.cvut.kbss.termit.dto.TermInfo;
+import cz.cvut.kbss.termit.dto.listing.TermDefinitionDto;
 import cz.cvut.kbss.termit.dto.listing.TermDto;
 import cz.cvut.kbss.termit.event.AssetPersistEvent;
 import cz.cvut.kbss.termit.event.AssetUpdateEvent;
@@ -295,6 +296,33 @@ public class TermDao extends BaseAssetDao<Term> implements SnapshotProvider<Term
         newCopy.removeAll(originalCopy);
         originalCopy.forEach(t -> subTermsCache.evict(t.getUri()));
         newCopy.forEach(t -> subTermsCache.evict(t.getUri()));
+    }
+
+    public List<TermDefinitionDto> findAllWithDefinition(Vocabulary vocabulary) {
+        Objects.requireNonNull(vocabulary);
+        try {
+            return em.createNativeQuery("""
+                             SELECT DISTINCT ?term ?label ?definition ?vocabulary WHERE {
+                                 GRAPH ?context {
+                                     ?term a ?type ;
+                                           ?hasLabel ?label ;
+                                           ?hasDefinition ?definition ;
+                                           FILTER (lang(?label) = ?perLang) .
+                                           FILTER (lang(?definition) = ?perLang) .
+                                 }
+                                 ?term ?inVocabulary ?vocabulary .
+                             } ORDER BY ?term
+                             """, "TermDefinitionDto")
+                     .setParameter("context", context(vocabulary))
+                     .setParameter("type", typeUri)
+                     .setParameter("hasLabel", LABEL_PROP)
+                     .setParameter("hasDefinition", URI.create(SKOS.DEFINITION))
+                     .setParameter("perLang", config.getLanguage())
+                     .setParameter("vocabulary", vocabulary.getUri())
+                     .getResultList();
+        } catch (RuntimeException e) {
+            throw new PersistenceException(e);
+        }
     }
 
     /**

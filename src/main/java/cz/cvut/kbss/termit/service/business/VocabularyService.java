@@ -17,12 +17,14 @@
  */
 package cz.cvut.kbss.termit.service.business;
 
+import cz.cvut.kbss.jopa.model.MultilingualString;
 import cz.cvut.kbss.termit.asset.provenance.SupportsLastModification;
 import cz.cvut.kbss.termit.dto.AggregatedChangeInfo;
 import cz.cvut.kbss.termit.dto.RdfsStatement;
 import cz.cvut.kbss.termit.dto.Snapshot;
 import cz.cvut.kbss.termit.dto.acl.AccessControlListDto;
 import cz.cvut.kbss.termit.dto.filter.ChangeRecordFilterDto;
+import cz.cvut.kbss.termit.dto.listing.TermDefinitionDto;
 import cz.cvut.kbss.termit.dto.listing.TermDto;
 import cz.cvut.kbss.termit.dto.listing.VocabularyDto;
 import cz.cvut.kbss.termit.event.VocabularyContentModifiedEvent;
@@ -64,6 +66,7 @@ import org.springframework.security.access.prepost.PostFilter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StopWatch;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -106,6 +109,7 @@ public class VocabularyService
     private final VocabularyAuthorizationService authorizationService;
 
     private final ApplicationContext context;
+    private final Configuration configuration;
 
     private ApplicationEventPublisher eventPublisher;
 
@@ -115,7 +119,7 @@ public class VocabularyService
                              VocabularyContextMapper contextMapper,
                              AccessControlListService aclService,
                              VocabularyAuthorizationService authorizationService,
-                             ApplicationContext context) {
+                             ApplicationContext context, Configuration configuration) {
         this.repositoryService = repositoryService;
         this.changeRecordService = changeRecordService;
         this.termService = termService;
@@ -123,6 +127,7 @@ public class VocabularyService
         this.aclService = aclService;
         this.authorizationService = authorizationService;
         this.context = context;
+        this.configuration = configuration;
     }
 
     /**
@@ -363,6 +368,42 @@ public class VocabularyService
               name = "allTermsVocabularyAnalysis")
     @PreAuthorize("@vocabularyAuthorizationService.canModify(#vocabularyUri)")
     public void runTextAnalysisOnAllTerms(URI vocabularyUri) {
+        StopWatch sw = new StopWatch();
+        sw.start("find all");
+        originalTest(vocabularyUri);
+        sw.stop();
+        sw.start("find all definitions");
+        test(vocabularyUri);
+        sw.stop();
+        LOG.warn(sw.prettyPrint());
+    }
+
+    public void test(URI vocabularyUri) {
+        final Vocabulary vocabulary = findRequired(vocabularyUri); // required when throttling for persistent context
+        LOG.debug("Analyzing definitions of all terms in vocabulary {} and vocabularies it imports.", vocabulary);
+        SnapshotProvider.verifySnapshotNotModified(vocabulary);
+        final List<TermDefinitionDto> allTerms = termService.findAllWithDefinition(vocabulary);
+        getTransitivelyImportedVocabularies(vocabulary)
+                .forEach(importedVocabulary ->
+                        allTerms.addAll(termService.findAllWithDefinition(getReference(importedVocabulary))));
+
+        final Map<URI, List<AbstractTerm>> contextToTerms = new HashMap<>(allTerms.size());
+        allTerms.stream().map(t -> {
+            final TermDto dto = new TermDto();
+            dto.setVocabulary(t.getVocabulary());
+            dto.setUri(t.getUri());
+            dto.setDefinition(MultilingualString.create(t.getDefinition(), configuration.getPersistence()
+                                                                                        .getLanguage()));
+            return dto;
+        }).forEach(t -> contextToTerms
+                .computeIfAbsent(contextMapper.getVocabularyContext(t.getVocabulary()),
+                        k -> new ArrayList<>())
+                .add(t)
+        );
+        termService.analyzeTermDefinitions(contextToTerms);
+    }
+
+    public void originalTest(URI vocabularyUri) {
         final Vocabulary vocabulary = findRequired(vocabularyUri); // required when throttling for persistent context
         LOG.debug("Analyzing definitions of all terms in vocabulary {} and vocabularies it imports.", vocabulary);
         SnapshotProvider.verifySnapshotNotModified(vocabulary);
