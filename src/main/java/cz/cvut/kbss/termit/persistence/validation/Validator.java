@@ -95,7 +95,8 @@ public class Validator implements VocabularyContentValidator {
         this.em = em;
         this.vocabularyContextMapper = vocabularyContextMapper;
         this.eventPublisher = eventPublisher;
-        initValidator(config.getPersistence().getLanguage());
+        initValidator(config.getPersistence().getLanguage()); // TODO: neměl by validator pracovat s jazykem slovníku?
+        // TODO: ale načítat znovu všechna pravidla pro každej slovník není ok
     }
 
     /**

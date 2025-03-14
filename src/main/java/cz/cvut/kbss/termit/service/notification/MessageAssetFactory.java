@@ -64,13 +64,13 @@ public class MessageAssetFactory {
 
         @Override
         public void visitTerm(AbstractTerm term) {
-            this.label = term.getLabel(config.getPersistence().getLanguage()) +
+            this.label = term.getLabel(config.getPersistence().getLanguage()) + // TODO: vocabulary language?
                     " (" + dataService.getLabel(term.getVocabulary(), null).orElse("") + ")";
         }
 
         @Override
         public void visitVocabulary(Vocabulary vocabulary) {
-            this.label = vocabulary.getLabel(config.getPersistence().getLanguage());
+            this.label = vocabulary.getLabel(vocabulary.getPrimaryLanguage());
         }
 
         @Override

@@ -105,7 +105,7 @@ public class VocabularyRepositoryService extends BaseAssetRepositoryService<Voca
     }
 
     private String getPrimaryLabel(Vocabulary vocabulary) {
-        return vocabulary.getLabel(config.getPersistence().getLanguage());
+        return vocabulary.getLabel(vocabulary.getPrimaryLanguage());
     }
 
     // Cache only if all vocabularies are editable

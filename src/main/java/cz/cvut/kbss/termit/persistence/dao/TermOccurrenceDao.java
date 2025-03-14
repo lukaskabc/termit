@@ -152,27 +152,51 @@ public class TermOccurrenceDao extends BaseDao<TermOccurrence> {
      * @return List of {@code TermOccurrences}
      */
     public List<TermOccurrences> getOccurrenceInfo(Term term) {
-        return em.createNativeQuery("SELECT ?term ?resource ?label (count(?x) as ?cnt) ?type ?suggested WHERE {" +
-                                            "BIND (?t AS ?term)" +
-                                            "{" +
-                                            "  ?x a ?suggestedOccurrence ." +
-                                            "  BIND (true as ?suggested)" +
-                                            "} UNION {" +
-                                            "  ?x a ?occurrence ." +
-                                            "  FILTER NOT EXISTS {" +
-                                            "    ?x a ?suggestedOccurrence ." +
-                                            "  }" +
-                                            "  BIND (false as ?suggested)" +
-                                            "} " +
-                                            "  ?x ?hasTerm ?term ;" +
-                                            "     ?hasTarget ?target . " +
-                                            "  { ?target ?hasSource ?resource . FILTER NOT EXISTS { ?resource a ?fileType . } } " +
-                                            "  UNION { ?target ?hasSource ?file . ?resource ?isDocumentOf ?file . } " +
-                                            "BIND (IF(EXISTS { ?resource a ?termType }, ?termDefOcc, ?fileOcc) as ?type)" +
-                                            "{ ?resource rdfs:label ?label . } UNION { ?resource ?hasTitle ?label . } " +
-                                            "FILTER langMatches(lang(?label), ?lang)" +
-                                            "} GROUP BY ?resource ?term ?label ?type ?suggested HAVING (?cnt > 0) ORDER BY ?label",
-                                    "TermOccurrences")
+        return em.createNativeQuery("""
+                                 SELECT ?term ?resource ?label (COUNT(?x) AS ?cnt) ?type ?suggested
+                                 WHERE {
+                                   BIND (?t AS ?term)
+                                   {
+                                     ?x a ?suggestedOccurrence .
+                                     BIND (true AS ?suggested)
+                                   }
+                                   UNION
+                                   {
+                                     ?x a ?occurrence .
+                                     FILTER NOT EXISTS {
+                                       ?x a ?suggestedOccurrence .
+                                     }
+                                     BIND (false AS ?suggested)
+                                   }
+                                   ?x ?hasTerm ?term ;
+                                      ?hasTarget ?target .
+                                   {
+                                     ?target ?hasSource ?resource .
+                                     FILTER NOT EXISTS {
+                                       ?resource a ?fileType .
+                                     }
+                                   }
+                                   UNION
+                                   {
+                                     ?target ?hasSource ?file .
+                                     ?resource ?isDocumentOf ?file .
+                                   }
+                                   BIND (IF(EXISTS { ?resource a ?termType }, ?termDefOcc, ?fileOcc) AS ?type)
+                                   {
+                                     ?resource rdfs:label ?label .
+                                   }
+                                   UNION
+                                   {
+                                     ?resource ?hasTitle ?label .
+                                   }
+                                   ?term ?inVocabulary ?vocabulary .
+                                   ?vocabulary ?hasLanguage ?language .
+                                   FILTER langMatches(lang(?label), ?language)
+                                 }
+                                 GROUP BY ?resource ?term ?label ?type ?suggested
+                                 HAVING (?cnt > 0)
+                                 ORDER BY ?label""",
+                         "TermOccurrences")
                  .setParameter("suggestedOccurrence", URI.create(Vocabulary.s_c_navrzeny_vyskyt_termu))
                  .setParameter("hasTerm", URI.create(Vocabulary.s_p_je_prirazenim_termu))
                  .setParameter("hasTarget", URI.create(Vocabulary.s_p_ma_cil))
@@ -181,11 +205,13 @@ public class TermOccurrenceDao extends BaseDao<TermOccurrence> {
                  .setParameter("hasTitle", URI.create(DC.Terms.TITLE))
                  .setParameter("isDocumentOf", URI.create(Vocabulary.s_p_ma_soubor))
                  .setParameter("fileType", URI.create(Vocabulary.s_c_soubor))
-                 .setParameter("lang", config.getLanguage())
                  .setParameter("termType", URI.create(SKOS.CONCEPT))
                  .setParameter("termDefOcc", URI.create(Vocabulary.s_c_definicni_vyskyt_termu))
                  .setParameter("fileOcc", URI.create(Vocabulary.s_c_souborovy_vyskyt_termu))
-                 .setParameter("t", term.getUri()).getResultList();
+                 .setParameter("t", term.getUri())
+                 .setParameter("inVocabulary", URI.create(Vocabulary.s_p_je_pojmem_ze_slovniku))
+                 .setParameter("hasLanguage", URI.create(DC.Terms.LANGUAGE))
+                 .getResultList();
     }
 
     @Override

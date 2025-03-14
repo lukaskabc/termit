@@ -76,23 +76,28 @@ public class AssetDao {
 
     private Optional<RecentlyModifiedAsset> getRecentlyModifiedAsset(AssetWithType asset, User author) {
         final Query query = em
-                .createNativeQuery(
-                        "SELECT DISTINCT ?entity ?label ?modified ?modifiedBy ?vocabulary ?type ?changeType WHERE {" +
-                                "?x a ?change ;" +
-                                "   a ?chType ;" +
-                                "?hasModifiedEntity ?ent ;" +
-                                "?hasEditor ?author ;" +
-                                "?hasModificationDate ?modified ." +
-                                "?ent ?hasLabel ?label . " +
-                                insertVocabularyPattern(asset) +
-                                "BIND (?ent as ?entity)" +
-                                "BIND (?author as ?modifiedBy)" +
-                                "FILTER (?chType != ?change)" +
-                                "FILTER (?hasLabel in (?labelProperties))" +
-                                "BIND (?assetType as ?type)" +
-                                "BIND (IF(?chType = ?persist, ?persist, ?update) as ?changeType)" +
-                                "FILTER (lang(?label) = ?language)" +
-                                "} ORDER BY DESC(?modified)", "RecentlyModifiedAsset")
+                .createNativeQuery("""
+                        SELECT DISTINCT ?entity ?label ?modified ?modifiedBy ?vocabulary ?type ?changeType WHERE {
+                            ?x a ?change ;
+                               a ?chType ;
+                               ?hasModifiedEntity ?ent ;
+                               ?hasEditor ?author ;
+                               ?hasModificationDate ?modified .
+                            OPTIONAL {
+                                ?ent ?isFromVocabulary ?vocabulary .
+                                ?vocabulary ?hasLanguage ?vocabularyLanguage .
+                            }
+                            BIND(COALESCE(?vocabularyLanguage, ?language) AS ?labelLanguage .
+                            ?ent ?hasLabel ?label .
+                            %s
+                            BIND (?ent as ?entity)
+                            BIND (?author as ?modifiedBy)
+                            FILTER (?chType != ?change)
+                            FILTER (?hasLabel in (?labelProperties))
+                            BIND (?assetType as ?type)
+                            BIND (IF(?chType = ?persist, ?persist, ?update) as ?changeType)
+                            FILTER (lang(?label) = ?labelLanguage)
+                        } ORDER BY DESC(?modified)""".formatted(insertVocabularyPattern(asset)), "RecentlyModifiedAsset")
                 .setParameter("ent", asset.uri)
                 .setParameter("assetType", asset.type)
                 .setParameter("change", URI.create(Vocabulary.s_c_zmena))
@@ -102,7 +107,8 @@ public class AssetDao {
                 .setParameter("hasModificationDate", URI.create(Vocabulary.s_p_ma_datum_a_cas_modifikace))
                 .setParameter("persist", URI.create(Vocabulary.s_c_vytvoreni_entity))
                 .setParameter("update", URI.create(Vocabulary.s_c_uprava_entity))
-                .setParameter("language", config.getLanguage())
+                .setParameter("hasLanguage", URI.create(DC.Terms.LANGUAGE))
+                .setParameter("language", config.getLanguage()) // fallback language if the assets is not in a vocabulary
                 .setMaxResults(1);
         setVocabularyRelatedParameter(asset, query);
         if (author != null) {

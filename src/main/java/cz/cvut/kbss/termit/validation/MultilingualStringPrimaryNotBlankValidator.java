@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Primary language is given by the application's configuration ({@link Persistence#getLanguage()}).
  */
 public class MultilingualStringPrimaryNotBlankValidator
-        implements ConstraintValidator<PrimaryNotBlank, MultilingualString> {
+        implements ConstraintValidator<PrimaryNotBlank, MultilingualString> { // TODO vocabulary primary language
 
     @Autowired
     private Configuration config;

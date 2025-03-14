@@ -154,6 +154,7 @@ public class ExcelImporter implements VocabularyImporter {
      */
     private URI resolveTermIdentifierWrtVocabulary(Term term, Vocabulary vocabulary) {
         final String termNamespace = resolveVocabularyTermNamespace(vocabulary);
+        // TODO: vocabulary primary language for importing
         if (term.getUri() == null) {
             return idResolver.generateDerivedIdentifier(vocabulary.getUri(),
                                                         config.getNamespace().getTerm().getSeparator(),

@@ -173,6 +173,11 @@ public class DataDao {
     public Optional<String> getLabel(URI id, @Nullable String language) {
         Objects.requireNonNull(id);
         if(language == null) {
+            /* TODO: this is called from frontend with DataController#getLabel
+             * should we fallback to the instance language?
+             * what about vocabulary language?
+             * what language does FE requests?
+             */
             language = config.getLanguage();
         }
         if (!id.isAbsolute()) {
