@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,5 +56,19 @@ public class PersonalAccessTokenDaoTest extends BaseDaoTestRunner {
     @Test
     public void findAllByUserAccountThrowsForNullAccount() {
         assertThrows(NullPointerException.class, () -> sut.findAllByUserAccount(null));
+    }
+
+    @Test
+    public void findRequiredReturnsTokenWithOwner() {
+        final UserAccount owner = Generator.generateUserAccountWithPassword();
+        final PersonalAccessToken token = Generator.generatePersonalAccessToken(owner);
+        transactional(() -> {
+            em.persist(owner);
+            em.persist(token);
+        });
+
+        final PersonalAccessToken result = sut.find(token.getUri()).orElseThrow();
+        assertNotNull(result);
+        assertEquals(owner, result.getOwner());
     }
 }
