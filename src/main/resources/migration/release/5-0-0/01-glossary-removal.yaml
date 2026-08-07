@@ -1,5 +1,6 @@
 changeSet:
-    id: v5.0.0 - Remove Glossary and relink concepts to vocabulary
+    id: v5.0.0_01
+    # Remove Glossary and relink concepts to vocabulary
     changes:
         -   type: sparqlUpdate
             query: |

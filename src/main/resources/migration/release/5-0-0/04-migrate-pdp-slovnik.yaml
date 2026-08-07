@@ -1,5 +1,6 @@
 changeSet:
-    id: v5.0.0 - Migrate custom attributes from pdp:slovnik and migrate access control list to english termit ontology
+    id: v5.0.0_04
+    # Migrate custom attributes from pdp:slovnik and migrate access control list to english termit ontology
     changes:
         -   type: sparqlUpdate
             query: |

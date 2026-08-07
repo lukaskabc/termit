@@ -1,5 +1,6 @@
 changeSet:
-    id: v5.0.0 - Migrate termit ontology to English
+    id: v5.0.0_03
+    # Migrate termit ontology to English
     changes:
         -   type: renameResource
             oldIri: http://onto.fel.cvut.cz/ontologies/application/termit/pojem/cíl-definičního-výskytu

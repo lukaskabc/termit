@@ -1,5 +1,6 @@
 changeSet:
-    id: v5.0.0 - Mark termit and data description ontology as read only
+    id: v5.0.0_10
+    # Mark termit and data description ontology as read only
     changes:
         -   type: sparqlUpdate
             query: |

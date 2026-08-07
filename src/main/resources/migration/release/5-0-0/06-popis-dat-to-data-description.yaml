@@ -1,5 +1,6 @@
 changeSet:
-    id: v5.0.0 - Migrate popis dat to data description ontology
+    id: v5.0.0_06
+    # Migrate popis dat to data description ontology
     changes:
         -   type: renameResource
             oldIri: http://onto.fel.cvut.cz/ontologies/slovník/agendový/popis-dat/pojem/dokument

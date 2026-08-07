@@ -1,5 +1,5 @@
 changeSet:
-    id: v5.0.0 - Delete unmigrated popis dat resources
+    id: v5.0.0_07
     # Delete unmigrated parts of the popis dat ontology
     # Because it may not be in a specific context, we have to delete them like this
     changes:

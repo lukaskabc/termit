@@ -1,5 +1,6 @@
 changeSet:
-    id: v5.0.0 - Remove old popis-dat classes
+    id: v5.0.0_02
+    # Remove old popis-dat classes
     changes:
         -   type: deleteClass
             iri: http://onto.fel.cvut.cz/ontologies/slovník/agendový/popis-dat/pojem/model

@@ -1,5 +1,6 @@
 changeSet:
-    id: v5.0.0 - Import termit ontology
+    id: v5.0.0_05
+    # Import termit ontology
     changes:
         -   type: importFromUrl
             sourceUrl: https://onto.fel.cvut.cz/ontologies/application/termit.ttl
