@@ -1,0 +1,8 @@
+changeSet:
+    id: v5.0.0 - Import data description ontology
+    changes:
+        -   type: importFromUrl
+            # Import data description ontology into a specific context (simpler future updates)
+            sourceUrl: https://onto.fel.cvut.cz/ontologies/data-description/version/2.0.0.ttl
+            graph: http://onto.fel.cvut.cz/ontologies/data-description
+            replace: true

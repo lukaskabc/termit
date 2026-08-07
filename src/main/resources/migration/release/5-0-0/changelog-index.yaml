@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/lukaskabc/ontology-migration-tool/refs/heads/lukaskabc/include-file-support/src/main/resources/changelog-scheme.json
+
+changelog:
+    -   include:
+            file: 01-glossary-removal.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 02-popis-dat-removal.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 03-termit-ontology-en.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 04-migrate-pdp-slovnik.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 05-import-termit-ontology.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 06-popis-dat-to-data-description.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 07-delete-popis-dat-orphans.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 08-data-description-cleanup.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 09-import-data-description.yaml
+            relativeToChangelogFile: true
+    -   include:
+            file: 10-mark-ontologies-read-only.yaml
+            relativeToChangelogFile: true

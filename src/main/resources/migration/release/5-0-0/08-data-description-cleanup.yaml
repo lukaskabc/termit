@@ -1,0 +1,16 @@
+changeSet:
+    id: v5.0.0 - Cleanup after data description migration in default context
+    changes:
+        # Delete data description migrated from popis dat because it may be in the default context
+        # We will re-import it next
+        -   type: sparqlUpdate
+            query: |
+                PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+                
+                DELETE {
+                    ?x ?y ?z .
+                } WHERE {
+                  ?x a skos:Concept ;
+                     ?y ?z .
+                  FILTER (STRSTARTS(STR(?x), "http://onto.fel.cvut.cz/ontologies/data-description"))
+                }

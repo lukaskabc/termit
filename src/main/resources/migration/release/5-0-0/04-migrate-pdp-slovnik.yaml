@@ -1,0 +1,22 @@
+changeSet:
+    id: v5.0.0 - Migrate custom attributes from pdp:slovnik and migrate access control list to english termit ontology
+    changes:
+        -   type: sparqlUpdate
+            query: |
+                PREFIX pdp: <http://onto.fel.cvut.cz/ontologies/slovník/agendový/popis-dat/pojem/>
+                
+                # Migrate custom attribute references of pdp:slovník to skos:ConceptScheme
+                DELETE {
+                    ?x ?y pdp:slovník .
+                } INSERT {
+                    GRAPH <http://onto.fel.cvut.cz/ontologies/application/termit/custom-attributes> {
+                        ?x ?y <http://www.w3.org/2004/02/skos/core#ConceptScheme> .
+                    }
+                } WHERE {
+                    GRAPH <http://onto.fel.cvut.cz/ontologies/application/termit/custom-attributes> {
+                        ?x ?y pdp:slovník .
+                    }
+                }
+        -   type: sparqlUpdate
+            query: |
+                MOVE <http://onto.fel.cvut.cz/ontologies/application/termit/pojem/seznam-řízení-přístupu> to <http://onto.fel.cvut.cz/ontologies/application/termit/access-control-list>
