@@ -28,6 +28,7 @@ import cz.cvut.kbss.termit.dto.filter.ChangeRecordFilterDto;
 import cz.cvut.kbss.termit.environment.Environment;
 import cz.cvut.kbss.termit.environment.Generator;
 import cz.cvut.kbss.termit.model.Term;
+import cz.cvut.kbss.termit.model.Term_;
 import cz.cvut.kbss.termit.model.User;
 import cz.cvut.kbss.termit.model.Vocabulary;
 import cz.cvut.kbss.termit.model.changetracking.AbstractChangeRecord;
@@ -68,6 +69,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ChangeRecordDaoTest extends BaseDaoTestRunner {
@@ -546,6 +548,45 @@ class ChangeRecordDaoTest extends BaseDaoTestRunner {
 
         assertEquals(recordCount, contentChanges.size());
         assertTrue(contentChanges.stream().allMatch(typeClass::isInstance));
+    }
+
+    @Test
+    void changeOfMultilingualStringIsLoadedAsASingleMultilingualString() {
+        enableRdfsInference(em);
+        Term term = Generator.generateTermWithId(vocabulary.getUri());
+
+        final MultilingualString originalValue = new MultilingualString();
+        originalValue.set("en", "english");
+        originalValue.set("cs", "czech");
+
+        final MultilingualString newValue = new MultilingualString();
+        newValue.set("en", "english");
+
+        UpdateChangeRecord record = new UpdateChangeRecord();
+        record.setChangedEntity(term.getUri());
+        record.setChangedAttribute(Term_.labelPropertyIRI.toURI());
+        record.setTimestamp(Utils.timestamp());
+        record.setAuthor(author);
+        record.setOriginalValue(Set.of(originalValue));
+        record.setNewValue(Set.of(newValue));
+
+        transactional(() -> {
+            em.persist(vocabulary);
+            em.persist(term, persistDescriptor(vocabulary.getUri()));
+            em.persist(record, persistDescriptor(contextResolver.resolveChangeTrackingContext(vocabulary)));
+        });
+
+        final List<AbstractChangeRecord> contentChanges = sut.findAll(term);
+        assertEquals(1, contentChanges.size());
+        final AbstractChangeRecord changeRecord = contentChanges.getFirst();
+        assertNotNull(changeRecord);
+
+        if (changeRecord instanceof UpdateChangeRecord updateRecord) {
+            assertNotNull(updateRecord.getOriginalValue());
+            assertEquals(Set.of(originalValue), updateRecord.getOriginalValue());
+        } else {
+            fail("Invalid type of returned change record");
+        }
     }
 
 }
