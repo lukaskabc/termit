@@ -8,6 +8,10 @@ import cz.cvut.kbss.termit.util.Constants;
 import cz.cvut.kbss.termit.util.Utils;
 import org.springframework.stereotype.Repository;
 
+import java.net.URI;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 @Repository
 public class IriMigrationDao {
     private static final String QUERY_DIR = "iri-migration/";
@@ -44,6 +48,36 @@ public class IriMigrationDao {
             query.executeUpdate(); // execute only for the default graph
         } catch (RuntimeException e) {
             throw new PersistenceException("Failed to migrate identifier: " + iris, e);
+        }
+    }
+
+    /**
+     * Retrieves all types of the given entity.
+     *
+     * @param entityUri the entity identifier
+     * @return the stream of distinct types of the entity
+     */
+    public Stream<URI> getEntityTypes(URI entityUri) {
+        Objects.requireNonNull(entityUri);
+        try {
+            return em.createNativeQuery("SELECT DISTINCT ?type WHERE { ?entity a ?type }", URI.class)
+                    .setParameter("entity", entityUri)
+                    .getResultStream();
+        } catch (RuntimeException e) {
+            throw new PersistenceException("Failed to load entity types: " + Utils.uriToString(entityUri), e);
+        }
+    }
+
+    public void moveGraph(URI originalGraph, URI newGraph) {
+        Objects.requireNonNull(originalGraph);
+        Objects.requireNonNull(newGraph);
+        try {
+            em.createNativeQuery("MOVE SILENT GRAPH ?original TO ?new")
+              .setParameter("original", originalGraph)
+              .setParameter("new", newGraph)
+              .executeUpdate();
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
         }
     }
 
