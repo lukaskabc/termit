@@ -14,7 +14,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Answers;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,16 +33,13 @@ public class RollbackControllerTest extends BaseControllerTestRunner {
     private Configuration config;
 
     @Mock
-    private IdentifierResolver idResolverMock;
-
-    @Mock
     private ChangeRollbackService changeRollbackService;
 
-    @InjectMocks
     private RollbackController sut;
 
     @BeforeEach
     void setUp() {
+        sut = new RollbackController(new IdentifierResolver(config), config, changeRollbackService);
         this.setUp(sut);
     }
 
@@ -71,14 +67,16 @@ public class RollbackControllerTest extends BaseControllerTestRunner {
         final String namespace = IdentifierResolver.extractIdentifierNamespace(asset.getUri());
         final UpdateChangeRecord record = createUpdateRecord(asset);
         final String recordLocalName = IdentifierResolver.extractIdentifierFragment(record.getUri());
+        final String recordNamespace = IdentifierResolver.extractIdentifierNamespace(record.getUri());
 
-        when(idResolverMock.resolveIdentifier(namespace, localName)).thenReturn(asset.getUri());
-        when(changeRollbackService.findRecordByLocalName(recordLocalName)).thenReturn(record);
+        when(changeRollbackService.findUpdateRecord(record.getUri())).thenReturn(record);
 
-        mockMvc.perform(post(endpointPath, localName, recordLocalName).param(Constants.QueryParams.NAMESPACE, namespace))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(post(endpointPath, localName, recordLocalName)
+                       .param(Constants.QueryParams.NAMESPACE, namespace)
+                       .param("recordNamespace", recordNamespace)
+               ).andExpect(status().isNoContent());
 
-        verify(changeRollbackService).findRecordByLocalName(recordLocalName);
+        verify(changeRollbackService).findUpdateRecord(record.getUri());
         verify(changeRollbackService).rollback(record);
     }
 
@@ -90,14 +88,38 @@ public class RollbackControllerTest extends BaseControllerTestRunner {
         final UpdateChangeRecord record = createUpdateRecord(asset);
         record.setChangedEntity(Generator.generateUri());
         final String recordLocalName = IdentifierResolver.extractIdentifierFragment(record.getUri());
+        final String recordNamespace = IdentifierResolver.extractIdentifierNamespace(record.getUri());
 
-        when(idResolverMock.resolveIdentifier(namespace, localName)).thenReturn(asset.getUri());
-        when(changeRollbackService.findRecordByLocalName(recordLocalName)).thenReturn(record);
+        when(changeRollbackService.findUpdateRecord(record.getUri())).thenReturn(record);
 
-        mockMvc.perform(post(endpointPath, localName, recordLocalName).param(Constants.QueryParams.NAMESPACE, namespace))
-               .andExpect(status().isUnprocessableContent());
+        mockMvc.perform(post(endpointPath, localName, recordLocalName)
+                       .param(Constants.QueryParams.NAMESPACE, namespace)
+                       .param("recordNamespace", recordNamespace)
+               ).andExpect(status().isUnprocessableContent());
 
-        verify(changeRollbackService).findRecordByLocalName(recordLocalName);
+        verify(changeRollbackService).findUpdateRecord(record.getUri());
         verify(changeRollbackService, never()).rollback(record);
+    }
+
+    @ParameterizedTest
+    @MethodSource("argumentsStream")
+    void rollbackChangeResolvesPreVersion5ChangeRecordUri(String endpointPath, Asset<?> asset) throws Exception {
+        final String localName = IdentifierResolver.extractIdentifierFragment(asset.getUri());
+        final String namespace = IdentifierResolver.extractIdentifierNamespace(asset.getUri());
+        final UpdateChangeRecord record = createUpdateRecord(asset);
+
+        final String recordLocalName = "instance-1085384276";
+        final String recordNamespace = "http://onto.fel.cvut.cz/ontologies/slovník/agendový/popis-dat/pojem/úprava-entity/";
+        record.setUri(URI.create(recordNamespace + recordLocalName));
+
+        when(changeRollbackService.findUpdateRecord(record.getUri())).thenReturn(record);
+
+        mockMvc.perform(post(endpointPath, localName, recordLocalName)
+                .param(Constants.QueryParams.NAMESPACE, namespace)
+                .param("recordNamespace", recordNamespace)
+        ).andExpect(status().isNoContent());
+
+        verify(changeRollbackService).findUpdateRecord(record.getUri());
+        verify(changeRollbackService).rollback(record);
     }
 }

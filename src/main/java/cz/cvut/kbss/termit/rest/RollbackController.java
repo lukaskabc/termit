@@ -50,7 +50,7 @@ public class RollbackController extends BaseController {
             @ApiResponse(responseCode = "404", description = "Vocabulary or update change record not found."),
             @ApiResponse(responseCode = "422", description = "When the change record is associated with a different asset")
     })
-    @PostMapping("/vocabularies/{localName}/history/{changeRecord}/rollback")
+    @PostMapping("/vocabularies/{localName}/history/{recordLocalName}/rollback")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void rollbackVocabulary(@Parameter(description = VocabularyController.ApiDoc.ID_LOCAL_NAME_DESCRIPTION,
                                               example = VocabularyController.ApiDoc.ID_LOCAL_NAME_EXAMPLE)
@@ -59,9 +59,12 @@ public class RollbackController extends BaseController {
                                               example = VocabularyController.ApiDoc.ID_NAMESPACE_EXAMPLE)
                                    @RequestParam(name = QueryParams.NAMESPACE) String namespace,
                                    @Parameter(description = "Local name of the update change record to roll back.")
-                                   @PathVariable String changeRecord) {
+                                   @PathVariable String recordLocalName,
+                                   @Parameter(description = "Change record identifier namespace")
+                                   @RequestParam(name = "recordNamespace") String recordNamespace) {
         final URI vocabularyUri = resolveIdentifier(namespace, localName);
-        rollback(vocabularyUri, changeRecord, "Vocabulary");
+        final URI recordUri = resolveIdentifier(recordNamespace, recordLocalName);
+        rollback(vocabularyUri, recordUri, "Vocabulary");
     }
 
     @Operation(security = {@SecurityRequirement(name = "bearer-key")},
@@ -71,24 +74,28 @@ public class RollbackController extends BaseController {
             @ApiResponse(responseCode = "404", description = "Term or update change record not found."),
             @ApiResponse(responseCode = "422", description = "When the change record is associated with a different asset")
     })
-    @PostMapping("/terms/{localName}/history/{changeRecord}/rollback")
+    @PostMapping("/terms/{localName}/history/{recordLocalName}/rollback")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void rollbackTerm(
             @Parameter(description = TermController.ApiDoc.ID_LOCAL_NAME_DESCRIPTION, example = TermController.ApiDoc.ID_LOCAL_NAME_EXAMPLE)
             @PathVariable String localName,
-            @PathVariable String changeRecord,
             @Parameter(description = TermController.ApiDoc.ID_NAMESPACE_DESCRIPTION, example = TermController.ApiDoc.ID_NAMESPACE_EXAMPLE)
-            @RequestParam(name = QueryParams.NAMESPACE) String namespace) {
+            @RequestParam(name = QueryParams.NAMESPACE) String namespace,
+            @Parameter(description = "Local name of the update change record to roll back.")
+            @PathVariable String recordLocalName,
+            @Parameter(description = "Change record identifier namespace")
+            @RequestParam(name = "recordNamespace") String recordNamespace) {
         final URI termUri = resolveIdentifier(namespace, localName);
-        rollback(termUri, changeRecord, "Term");
+        final URI changeRecordUri = resolveIdentifier(recordNamespace, recordLocalName);
+        rollback(termUri, changeRecordUri, "Term");
     }
 
-    private void rollback(URI entityUri, String changeRecord, String entityType) {
-        final UpdateChangeRecord record = changeRollbackService.findRecordByLocalName(changeRecord);
+    private void rollback(URI entityUri, URI recordUri, String entityType) {
+        final UpdateChangeRecord record = changeRollbackService.findUpdateRecord(recordUri);
         if (!entityUri.equals(record.getChangedEntity())) {
             throw new InvalidParameterException("Record not associated with specified " + entityType);
         }
         changeRollbackService.rollback(record);
-        LOG.debug("Change record {} of {} <{}> rolled back.", changeRecord, entityType.toLowerCase(), entityUri);
+        LOG.debug("Change record <{}> of {} <{}> rolled back.", record, entityType.toLowerCase(), entityUri);
     }
 }
