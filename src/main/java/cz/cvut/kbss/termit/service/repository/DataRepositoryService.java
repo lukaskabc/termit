@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -276,5 +277,10 @@ public class DataRepositoryService {
 
             dataDao.evictCacheForContexts(contextsToEvict);
         }
+    }
+
+    public List<CustomAttribute> findCustomAttributes(Set<URI> customAttributes) {
+        return dataDao.findAllCustomAttributes(
+                List.of(CustomAttributeSpecifications.allWithIdentifiers(customAttributes)));
     }
 }
