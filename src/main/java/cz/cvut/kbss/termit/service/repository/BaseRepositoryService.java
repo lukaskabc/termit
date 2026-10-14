@@ -26,9 +26,10 @@ import cz.cvut.kbss.termit.model.util.HasIdentifier;
 import cz.cvut.kbss.termit.persistence.dao.GenericDao;
 import cz.cvut.kbss.termit.service.IdentifierResolver;
 import cz.cvut.kbss.termit.validation.ValidationResult;
+import org.springframework.transaction.annotation.Transactional;
+
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Validator;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.util.List;
@@ -38,12 +39,12 @@ import java.util.stream.Collectors;
 
 /**
  * Base implementation of repository services.
- * <p>
- * It contains the basic transactional CRUD operations. Subclasses are expected to provide DAO of the correct type,
+ *
+ * <p>It contains the basic transactional CRUD operations. Subclasses are expected to provide DAO of the correct type,
  * which is used by the CRUD methods implemented by this base class.
- * <p>
- * In order to minimize chances of messing up the transactional behavior, subclasses *should not* override the main CRUD
- * methods and instead should provide custom business logic by overriding the helper hooks such as
+ *
+ * <p>In order to minimize chances of messing up the transactional behavior, subclasses *should not* override the main
+ * CRUD methods and instead should provide custom business logic by overriding the helper hooks such as
  * {@link #prePersist(HasIdentifier)}.
  *
  * @param <T> Domain object type managed by this service
@@ -64,7 +65,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
     protected abstract GenericDao<T> getPrimaryDao();
 
     // Read methods are intentionally not transactional because, for example, when postLoad manipulates the resulting
-    // entity in any way, transaction commit would attempt to insert the change into the repository, which is not desired
+    // entity in any way, transaction commit would attempt to insert the change into the repository, which is not
+    // desired
 
     /**
      * Loads all instances of the type managed by this service from the repository.
@@ -99,12 +101,12 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
 
     /**
      * Gets a reference to an object wih the specified identifier.
-     * <p>
-     * Note that all attributes of the reference are loaded lazily and the corresponding persistence context must be
+     *
+     * <p>Note that all attributes of the reference are loaded lazily and the corresponding persistence context must be
      * still open to load them.
-     * <p>
-     * Also note that, in contrast to {@link #find(URI)}, this method does not invoke {@link #postLoad(HasIdentifier)}
-     * for the loaded instance.
+     *
+     * <p>Also note that, in contrast to {@link #find(URI)}, this method does not invoke
+     * {@link #postLoad(HasIdentifier)} for the loaded instance.
      *
      * @param id Identifier of the object to load
      * @return Entity reference
@@ -120,9 +122,9 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
 
     /**
      * Finds an object with the specified id and returns it.
-     * <p>
-     * In comparison to {@link #find(URI)}, this method guarantees to return a matching instance. If no such object is
-     * found, a {@link NotFoundException} is thrown.
+     *
+     * <p>In comparison to {@link #find(URI)}, this method guarantees to return a matching instance. If no such object
+     * is found, a {@link NotFoundException} is thrown.
      *
      * @param id Identifier of the object to load
      * @return The matching object
@@ -131,7 +133,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
      */
     @Transactional(readOnly = true)
     public T findRequired(URI id) {
-        return find(id).orElseThrow(() -> NotFoundException.create(resolveGenericType().getSimpleName(), id));
+        return find(id).orElseThrow(
+                        () -> NotFoundException.create(resolveGenericType().getSimpleName(), id));
     }
 
     /**
@@ -172,8 +175,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
 
     /**
      * Override this method to plug custom behavior into the transactional cycle of {@link #persist(HasIdentifier)}.
-     * <p>
-     * The default behavior is to validate the specified instance.
+     *
+     * <p>The default behavior is to validate the specified instance.
      *
      * @param instance The instance to be persisted, not {@code null}
      */
@@ -209,8 +212,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
 
     /**
      * Override this method to plug custom behavior into the transactional cycle of {@link #update(HasIdentifier)} )}.
-     * <p>
-     * The default behavior is to validate the specified instance and ensure its existence in the repository.
+     *
+     * <p>The default behavior is to validate the specified instance and ensure its existence in the repository.
      *
      * @param instance The instance to be updated, not {@code null}
      */
@@ -246,8 +249,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
 
     /**
      * Override this method to plug custom behavior into the transactional cycle of {@link #remove(HasIdentifier)}.
-     * <p>
-     * The default behavior is a no-op.
+     *
+     * <p>The default behavior is a no-op.
      *
      * @param instance The instance to be removed, not {@code null}
      */
@@ -257,8 +260,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
 
     /**
      * Override this method to plug custom behavior into the transactional cycle of {@link #remove(HasIdentifier)}.
-     * <p>
-     * The default behavior is a no-op.
+     *
+     * <p>The default behavior is a no-op.
      *
      * @param instance The removed instance, not {@code null}
      */
@@ -278,8 +281,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
 
     /**
      * Validates the specified instance, using JSR 380.
-     * <p>
-     * This assumes that the type contains JSR 380 validation annotations.
+     *
+     * <p>This assumes that the type contains JSR 380 validation annotations.
      *
      * @param instance The instance to validate
      * @throws ValidationException In case the instance is not valid
@@ -291,12 +294,12 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
     /**
      * Validates the specified instance, using the specified validator.
      *
-     * @param instance  The instance to validate
+     * @param instance The instance to validate
      * @param validator Validator to use for validation
-     * @param <T>       Type of the instance to validate
+     * @param <T> Type of the instance to validate
      * @throws ValidationException In case the instance is not valid
      */
-    protected static <T> void validate(T instance, Validator validator) {
+    static <T> void validate(T instance, Validator validator) {
         final ValidationResult<T> validationResult = ValidationResult.of(validator.validate(instance));
         if (!validationResult.isValid()) {
             throw new ValidationException(validationResult);
@@ -312,8 +315,8 @@ public abstract class BaseRepositoryService<T extends HasIdentifier, DTO extends
      */
     protected void validateUri(URI uri) throws InvalidIdentifierException {
         if (uri != null && !IdentifierResolver.isAbsoluteUri(uri.toString())) {
-            throw new InvalidIdentifierException("Invalid URI: '" + uri + "'", "error.invalidIdentifier").addParameter(
-                    "uri", uri.toString());
+            throw new InvalidIdentifierException("Invalid URI: '" + uri + "'", "error.invalidIdentifier")
+                    .addParameter("uri", uri.toString());
         }
     }
 }

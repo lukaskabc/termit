@@ -40,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.validation.Validator;
 
 import java.net.URI;
 import java.util.Collections;
@@ -59,11 +60,15 @@ public class DataRepositoryService {
 
     private final Configuration config;
 
+    private final Validator validator;
+
     @Autowired
-    public DataRepositoryService(DataDao dataDao, IdentifierResolver idResolver, Configuration config) {
+    public DataRepositoryService(
+            DataDao dataDao, IdentifierResolver idResolver, Configuration config, Validator validator) {
         this.dataDao = dataDao;
         this.idResolver = idResolver;
         this.config = config;
+        this.validator = validator;
     }
 
     /**
@@ -151,7 +156,7 @@ public class DataRepositoryService {
         if (attribute.getDomain() == null) {
             attribute.setDomain(URI.create(SKOS.CONCEPT));
         }
-        validate(attribute);
+        validate(attribute, validator);
         if (attribute.getUri() == null) {
             attribute.setUri(idResolver.generateIdentifier(
                     config.getNamespace().getCustomAttribute(), getLabelForIdentifier(attribute)));
@@ -168,7 +173,7 @@ public class DataRepositoryService {
         return att.getLabel().get();
     }
 
-    private static void validate(CustomAttribute attribute) {
+    private static void validate(CustomAttribute attribute, Validator validator) {
         assert attribute.getDomain() != null;
         final String strDomain = attribute.getDomain().toString();
         if (!SKOS.CONCEPT.equals(strDomain)
@@ -187,6 +192,7 @@ public class DataRepositoryService {
         if (attribute.getLabel() == null || attribute.getLabel().isEmpty()) {
             throw new ValidationException("Custom attribute must have a label.");
         }
+        BaseRepositoryService.validate(attribute, validator);
     }
 
     @Transactional
@@ -194,7 +200,7 @@ public class DataRepositoryService {
         Objects.requireNonNull(attribute);
         final CustomAttribute existing = dataDao.findCustomAttribute(attribute.getUri())
                 .orElseThrow(() -> NotFoundException.create(CustomAttribute.class, attribute.getUri()));
-        validate(attribute);
+        validate(attribute, validator);
         existing.setLabel(attribute.getLabel());
         existing.setComment(attribute.getComment());
         existing.setDomain(attribute.getDomain());
