@@ -296,8 +296,8 @@ class SearchDaoAdvancedSearchTest extends BaseDaoTestRunner {
                     URI.create(SKOS.EDITORIAL_NOTE),
                     MultilingualString.create("Editorial note", Environment.LANGUAGE),
                     null);
-            customAtt.setRange(URI.create(RDF.LANG_STRING));
-            customAtt.setDomain(URI.create(SKOS.CONCEPT));
+            customAtt.setRange(CustomAttribute.Range.LANG_STRING);
+            customAtt.setDomain(CustomAttribute.Domain.TERM);
             em.persist(customAtt, new EntityDescriptor(URI.create(CustomAttribute.CONTEXT)));
         });
         final Set<URI> matchingTermUris = terms.stream()

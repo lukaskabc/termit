@@ -4,7 +4,6 @@ import cz.cvut.kbss.jopa.model.MultilingualString;
 import cz.cvut.kbss.jopa.vocabulary.SKOS;
 import cz.cvut.kbss.termit.environment.Environment;
 import cz.cvut.kbss.termit.environment.Generator;
-import cz.cvut.kbss.termit.exception.UnsupportedDomainException;
 import cz.cvut.kbss.termit.exception.ValidationException;
 import cz.cvut.kbss.termit.model.CustomAttribute;
 import cz.cvut.kbss.termit.model.CustomAttribute_;
@@ -15,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -69,26 +68,16 @@ class DataRepositoryServiceTest {
     }
 
     @ParameterizedTest
-    @CsvSource({SKOS.CONCEPT, SKOS.CONCEPT_SCHEME})
-    void persistCustomAttributeSupportsSelectedDomains(String domain) {
+    @EnumSource(CustomAttribute.Domain.class)
+    void persistCustomAttributeSupportsSelectedDomains(CustomAttribute.Domain domain) {
         final CustomAttribute customAttribute = new CustomAttribute();
         customAttribute.setLabel(MultilingualString.create("Custom attribute", "en"));
         customAttribute.setUri(Generator.generateUri());
-        customAttribute.setDomain(URI.create(domain));
+        customAttribute.setDomain(domain);
 
         sut.persistCustomAttribute(customAttribute);
         verify(dataDao).persist(customAttribute);
-        assertEquals(URI.create(domain), customAttribute.getDomain());
-    }
-
-    @Test
-    void persistCustomAttributeThrowsUnsupportedDomainExceptionWhenDomainIsNotSkosConceptOrVocabulary() {
-        final CustomAttribute customAttribute = new CustomAttribute();
-        customAttribute.setLabel(MultilingualString.create("Custom attribute", "en"));
-        customAttribute.setUri(Generator.generateUri());
-        customAttribute.setDomain(URI.create("https://example.com/unsupported-domain"));
-
-        assertThrows(UnsupportedDomainException.class, () -> sut.persistCustomAttribute(customAttribute));
+        assertEquals(domain, customAttribute.getDomain());
     }
 
     @Test
@@ -137,16 +126,16 @@ class DataRepositoryServiceTest {
                 Generator.generateUri(),
                 MultilingualString.create("Attribute one", "en"),
                 MultilingualString.create("Description one", "en"));
-        existing.setDomain(URI.create(SKOS.CONCEPT));
-        existing.setRange(URI.create(SKOS.CONCEPT));
+        existing.setDomain(CustomAttribute.Domain.TERM);
+        existing.setRange(CustomAttribute.Range.TERM);
         when(dataDao.findCustomAttribute(existing.getUri())).thenReturn(Optional.of(existing));
         final CustomAttribute updated = new CustomAttribute(
                 existing.getUri(),
                 MultilingualString.create("Updated attribute", "en"),
                 MultilingualString.create("Updated description", "en"));
-        updated.setDomain(URI.create(SKOS.CONCEPT));
-        updated.setRange(URI.create("http://www.w3.org/2001/XMLSchema#string"));
-        updated.setAnnotatedRelationships(Set.of(URI.create("http://example.org/property")));
+        updated.setDomain(CustomAttribute.Domain.TERM);
+        updated.setRange(CustomAttribute.Range.STRING);
+        updated.setAnnotatedRelationships(Set.of(CustomAttribute.Relationship.RELATED));
 
         sut.updateCustomAttribute(updated);
         assertEquals(updated.getLabel(), existing.getLabel());

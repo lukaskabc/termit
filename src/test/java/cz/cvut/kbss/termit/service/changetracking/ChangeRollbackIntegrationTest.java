@@ -2,8 +2,6 @@ package cz.cvut.kbss.termit.service.changetracking;
 
 import cz.cvut.kbss.jopa.model.EntityManager;
 import cz.cvut.kbss.jopa.model.MultilingualString;
-import cz.cvut.kbss.jopa.vocabulary.RDFS;
-import cz.cvut.kbss.jopa.vocabulary.SKOS;
 import cz.cvut.kbss.termit.dto.TermInfo;
 import cz.cvut.kbss.termit.dto.filter.ChangeRecordFilterDto;
 import cz.cvut.kbss.termit.environment.Environment;
@@ -330,8 +328,8 @@ class ChangeRollbackIntegrationTest extends BaseServiceTestRunner {
         final CustomAttribute customAttribute = new CustomAttribute();
         customAttribute.setUri(uriProperty);
         customAttribute.setLabel(MultilingualString.create("General URI resource", null));
-        customAttribute.setDomain(Term_.entityClassIRI.toURI());
-        customAttribute.setRange(URI.create(RDFS.RESOURCE));
+        customAttribute.setDomain(CustomAttribute.Domain.TERM);
+        customAttribute.setRange(CustomAttribute.Range.RESOURCE);
         dataRepositoryService.persistCustomAttribute(customAttribute);
         return customAttribute;
     }
@@ -352,22 +350,6 @@ class ChangeRollbackIntegrationTest extends BaseServiceTestRunner {
         term = termService.findRequired(term.getUri());
         assertTrue(term.getProperties().containsKey(uriProperty.toString()));
         assertTrue(term.getProperties().get(uriProperty.toString()).contains(property));
-    }
-
-    @Test
-    void rollbackOfCustomAttributeWithUnknownRangeThrows() {
-        CustomAttribute attribute = persistUriCustomAttribute();
-        attribute.setRange(propertyB);
-        dataRepositoryService.updateCustomAttribute(attribute);
-
-        // apply change and create change record
-        term.getProperties().remove(uriProperty.toString());
-        term = update(term, termService);
-
-        assertFalse(term.getProperties().containsKey(uriProperty.toString()));
-
-        final UpdateChangeRecord record = getRecord(term);
-        assertThrows(UpdateChangeRecordRollbackException.class, () -> sut.rollback(record));
     }
 
     @Test
@@ -413,22 +395,6 @@ class ChangeRollbackIntegrationTest extends BaseServiceTestRunner {
     }
 
     @Test
-    void rollbackOfCustomAttributeWithUnknownRangeAndUriOriginalValueThrows() {
-        final CustomAttribute customAttribute = persistUriCustomAttribute();
-        customAttribute.setRange(Generator.generateUri());
-        dataRepositoryService.updateCustomAttribute(customAttribute);
-
-        // apply change and create change record
-        term.getProperties().remove(customAttribute.getUri().toString());
-        term = update(term, termService);
-
-        final UpdateChangeRecord record = getRecord(term);
-        assertEquals(Set.of(property), record.getOriginalValue());
-
-        assertThrows(UpdateChangeRecordRollbackException.class, () -> sut.rollback(record));
-    }
-
-    @Test
     void rollbackOfMultilingualStringPreservesOtherTranslations() {
         final String originalEn = "Original English description";
         final String originalCs = "Původní český popis";
@@ -463,8 +429,8 @@ class ChangeRollbackIntegrationTest extends BaseServiceTestRunner {
         final CustomAttribute customAttribute = new CustomAttribute();
         customAttribute.setUri(Generator.generateUri());
         customAttribute.setLabel(MultilingualString.create("Term reference", null));
-        customAttribute.setDomain(Term_.entityClassIRI.toURI());
-        customAttribute.setRange(URI.create(SKOS.CONCEPT));
+        customAttribute.setDomain(CustomAttribute.Domain.TERM);
+        customAttribute.setRange(CustomAttribute.Range.TERM);
         dataRepositoryService.persistCustomAttribute(customAttribute);
         return customAttribute;
     }

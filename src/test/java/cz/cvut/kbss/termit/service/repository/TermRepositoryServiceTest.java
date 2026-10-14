@@ -1070,8 +1070,8 @@ class TermRepositoryServiceTest extends BaseServiceTestRunner {
         final Term referenced = Generator.generateTermWithId(vocabulary.getUri());
         final CustomAttribute customAtt =
                 new CustomAttribute(Generator.generateUri(), MultilingualString.create("Test att", "en"), null);
-        customAtt.setDomain(URI.create(SKOS.CONCEPT));
-        customAtt.setRange(URI.create(SKOS.CONCEPT));
+        customAtt.setDomain(CustomAttribute.Domain.TERM);
+        customAtt.setRange(CustomAttribute.Range.TERM);
         term.setProperties(Map.of(customAtt.getUri().toString(), Set.of(referenced.getUri())));
         transactional(() -> {
             em.persist(term, descriptorFactory.termDescriptor(term));

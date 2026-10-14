@@ -18,9 +18,7 @@
 package cz.cvut.kbss.termit.service.repository;
 
 import cz.cvut.kbss.jopa.vocabulary.RDF;
-import cz.cvut.kbss.jopa.vocabulary.SKOS;
 import cz.cvut.kbss.termit.exception.NotFoundException;
-import cz.cvut.kbss.termit.exception.UnsupportedDomainException;
 import cz.cvut.kbss.termit.exception.ValidationException;
 import cz.cvut.kbss.termit.model.CustomAttribute;
 import cz.cvut.kbss.termit.model.RdfsResource;
@@ -154,7 +152,7 @@ public class DataRepositoryService {
     public void persistCustomAttribute(@Nonnull CustomAttribute attribute) {
         Objects.requireNonNull(attribute);
         if (attribute.getDomain() == null) {
-            attribute.setDomain(URI.create(SKOS.CONCEPT));
+            attribute.setDomain(CustomAttribute.Domain.TERM);
         }
         validate(attribute, validator);
         if (attribute.getUri() == null) {
@@ -176,11 +174,6 @@ public class DataRepositoryService {
     private static void validate(CustomAttribute attribute, Validator validator) {
         assert attribute.getDomain() != null;
         final String strDomain = attribute.getDomain().toString();
-        if (!SKOS.CONCEPT.equals(strDomain)
-                && !SKOS.CONCEPT_SCHEME.equals(strDomain)
-                && !RDF.STATEMENT.equals(strDomain)) {
-            throw new UnsupportedDomainException("Unsupported custom attribute domain: " + attribute.getDomain());
-        }
 
         if (RDF.STATEMENT.equals(strDomain)) {
             if (attribute.getAnnotatedRelationships() == null

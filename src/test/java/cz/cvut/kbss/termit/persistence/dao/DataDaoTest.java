@@ -21,7 +21,6 @@ import cz.cvut.kbss.jopa.model.EntityManager;
 import cz.cvut.kbss.jopa.model.MultilingualString;
 import cz.cvut.kbss.jopa.vocabulary.DC;
 import cz.cvut.kbss.jopa.vocabulary.OWL;
-import cz.cvut.kbss.jopa.vocabulary.XSD;
 import cz.cvut.kbss.ontodriver.model.LangString;
 import cz.cvut.kbss.termit.environment.Environment;
 import cz.cvut.kbss.termit.environment.Generator;
@@ -382,11 +381,11 @@ class DataDaoTest extends BaseDaoTestRunner {
     @Test
     void findAllCustomAttributesReturnsCustomAttributes() {
         final CustomAttribute pOne = createCustomAttribute();
-        pOne.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
-        pOne.setRange(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
+        pOne.setDomain(CustomAttribute.Domain.TERM);
+        pOne.setRange(CustomAttribute.Range.TERM);
         final CustomAttribute pTwo = createCustomAttribute();
-        pTwo.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
-        pTwo.setRange(URI.create(XSD.BOOLEAN));
+        pTwo.setDomain(CustomAttribute.Domain.TERM);
+        pTwo.setRange(CustomAttribute.Range.BOOLEAN);
         transactional(() -> {
             em.persist(pOne);
             em.persist(pTwo);
@@ -400,11 +399,11 @@ class DataDaoTest extends BaseDaoTestRunner {
     @Test
     void findAllCustomAttributesByDomainReturnsCustomAttributesWithSpecifiedDomain() {
         final CustomAttribute pOne = createCustomAttribute();
-        pOne.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT_SCHEME));
-        pOne.setRange(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
+        pOne.setDomain(CustomAttribute.Domain.VOCABULARY);
+        pOne.setRange(CustomAttribute.Range.TERM);
         final CustomAttribute pTwo = createCustomAttribute();
-        pTwo.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
-        pTwo.setRange(URI.create(XSD.BOOLEAN));
+        pTwo.setDomain(CustomAttribute.Domain.TERM);
+        pTwo.setRange(CustomAttribute.Range.BOOLEAN);
         transactional(() -> {
             em.persist(pOne);
             em.persist(pTwo);
@@ -434,7 +433,7 @@ class DataDaoTest extends BaseDaoTestRunner {
         // Subject of the custom attribute annotation is IRI
 
         final CustomAttribute attribute = createCustomAttribute();
-        attribute.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
+        attribute.setDomain(CustomAttribute.Domain.TERM);
         transactional(() -> em.persist(attribute));
 
         final IRI termIri = Values.iri(Generator.generateUri().toString());
@@ -467,8 +466,8 @@ class DataDaoTest extends BaseDaoTestRunner {
 
         final URI relation = URI.create(SKOS.RELATED.stringValue());
         final CustomAttribute attribute = createCustomAttribute();
-        attribute.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.RDF.STATEMENT));
-        attribute.setAnnotatedRelationships(Set.of(relation));
+        attribute.setDomain(CustomAttribute.Domain.RELATION);
+        attribute.setAnnotatedRelationships(Set.of(CustomAttribute.Relationship.RELATED));
         transactional(() -> em.persist(attribute));
 
         final IRI termOne = Values.iri(Generator.generateUri().toString());
@@ -506,10 +505,10 @@ class DataDaoTest extends BaseDaoTestRunner {
     void findCustomAttributeUsageReturnsTotalElementsCountMatchingNumberOfUsagesOfRequestedAttribute() {
         // Unrelated attribute has a single usage, attribute B has two usages
         final CustomAttribute unrelated = createCustomAttribute();
-        unrelated.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
+        unrelated.setDomain(CustomAttribute.Domain.TERM);
 
         final CustomAttribute attribute = createCustomAttribute();
-        attribute.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
+        attribute.setDomain(CustomAttribute.Domain.TERM);
 
         transactional(() -> {
             em.persist(unrelated);
@@ -542,8 +541,8 @@ class DataDaoTest extends BaseDaoTestRunner {
     void removeAllCustomAttributeUsagesRemovesUsagesWithSimpleSubjectAndKeepsOtherStatements() {
         // Subject of the custom attribute usage is a plain IRI
         final CustomAttribute attribute = createCustomAttribute();
-        attribute.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.SKOS.CONCEPT));
-        attribute.setRange(URI.create(XSD.STRING));
+        attribute.setDomain(CustomAttribute.Domain.TERM);
+        attribute.setRange(CustomAttribute.Range.STRING);
         transactional(() -> em.persist(attribute));
 
         final IRI termIri = Values.iri(Generator.generateUri().toString());
@@ -577,9 +576,9 @@ class DataDaoTest extends BaseDaoTestRunner {
         // Subject of the custom attribute usage is another triple
         final URI relation = URI.create(SKOS.RELATED.stringValue());
         final CustomAttribute attribute = createCustomAttribute();
-        attribute.setDomain(URI.create(cz.cvut.kbss.jopa.vocabulary.RDF.STATEMENT));
-        attribute.setRange(URI.create(XSD.STRING));
-        attribute.setAnnotatedRelationships(Set.of(relation));
+        attribute.setDomain(CustomAttribute.Domain.RELATION);
+        attribute.setRange(CustomAttribute.Range.STRING);
+        attribute.setAnnotatedRelationships(Set.of(CustomAttribute.Relationship.RELATED));
         transactional(() -> em.persist(attribute));
 
         final IRI termOne = Values.iri(Generator.generateUri().toString());
