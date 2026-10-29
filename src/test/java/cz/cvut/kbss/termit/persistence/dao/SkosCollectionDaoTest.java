@@ -26,10 +26,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SkosCollectionDaoTest extends BaseDaoTestRunner {
@@ -973,5 +977,17 @@ class SkosCollectionDaoTest extends BaseDaoTestRunner {
 
         assertTrue(result.isEmpty());
         assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    void findDtoDoesNotLoadMembersOfUnorderedCollection() {
+        final SkosCollectionDto dto = sut.findDto(unorderedCollection.getUri()).orElseThrow();
+        assertNull(dto.getProperties().get(SKOS.MEMBER));
+        assertNull(dto.getProperties().get(SKOS.MEMBER_LIST));
+
+        Field membersField = ReflectionUtils.findField(SkosCollectionDto.class, "members");
+        ReflectionUtils.makeAccessible(membersField);
+        Object membersSet = ReflectionUtils.getField(membersField, dto);
+        assertEquals(Collections.emptySet(), membersSet);
     }
 }
