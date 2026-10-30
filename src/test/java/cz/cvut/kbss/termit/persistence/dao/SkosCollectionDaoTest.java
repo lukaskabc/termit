@@ -9,6 +9,7 @@ import cz.cvut.kbss.termit.dto.TypeAwareEntity;
 import cz.cvut.kbss.termit.environment.Environment;
 import cz.cvut.kbss.termit.environment.Generator;
 import cz.cvut.kbss.termit.model.Term;
+import cz.cvut.kbss.termit.model.User;
 import cz.cvut.kbss.termit.model.Vocabulary;
 import cz.cvut.kbss.termit.model.collection.OrderedTermCollection;
 import cz.cvut.kbss.termit.model.collection.SkosCollection;
@@ -17,6 +18,7 @@ import cz.cvut.kbss.termit.model.collection.TermCollection;
 import cz.cvut.kbss.termit.model.collection.TermCollection_;
 import cz.cvut.kbss.termit.model.util.HasIdentifier;
 import cz.cvut.kbss.termit.persistence.context.DescriptorFactory;
+import cz.cvut.kbss.termit.persistence.snapshot.CascadingSnapshotCreator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -60,6 +62,9 @@ class SkosCollectionDaoTest extends BaseDaoTestRunner {
 
     @Autowired
     private DescriptorFactory descriptorFactory;
+
+    @Autowired
+    private CascadingSnapshotCreator snapshotCreator;
 
     private Vocabulary vocabulary;
     private Descriptor vocabularyDescriptor;
@@ -989,5 +994,55 @@ class SkosCollectionDaoTest extends BaseDaoTestRunner {
         ReflectionUtils.makeAccessible(membersField);
         Object membersSet = ReflectionUtils.getField(membersField, dto);
         assertEquals(Collections.emptySet(), membersSet);
+    }
+
+    /** Creates a snapshot of the {@link #vocabulary}, including its terms and collections. */
+    private void createVocabularySnapshot() {
+        final User author = Generator.generateUserWithId();
+        transactional(() -> em.persist(author));
+        Environment.setCurrentUser(author);
+        transactional(() -> snapshotCreator.createSnapshot(vocabulary));
+    }
+
+    private URI findSnapshotIdentifier(URI original, String isVersionOfProperty) {
+        return em.createNativeQuery("SELECT ?snapshot WHERE { ?snapshot ?isVersionOf ?original . }", URI.class)
+                .setParameter("isVersionOf", URI.create(isVersionOfProperty))
+                .setParameter("original", original)
+                .getSingleResult();
+    }
+
+    private void assertSnapshotOfCollectionIsFoundBySnapshotOfTerm(SkosCollection<?> collection, Term member) {
+        createVocabularySnapshot();
+        final URI termSnapshot =
+                findSnapshotIdentifier(member.getUri(), cz.cvut.kbss.termit.util.Vocabulary.s_p_is_version_of_term);
+        final URI collectionSnapshot = findSnapshotIdentifier(
+                collection.getUri(), cz.cvut.kbss.termit.util.Vocabulary.s_p_is_version_of_collection);
+        final URI vocabularySnapshot = findSnapshotIdentifier(
+                vocabulary.getUri(), cz.cvut.kbss.termit.util.Vocabulary.s_p_is_version_of_vocabulary);
+
+        final List<SkosCollectionDto> result = sut.findCollectionsWithMember(termSnapshot);
+
+        assertEquals(List.of(collectionSnapshot), identifiers(result));
+        assertEquals(vocabularySnapshot, result.getFirst().getVocabulary());
+    }
+
+    @Test
+    void findCollectionsWithMemberFindsSnapshotOfUnorderedCollectionBySnapshotOfTerm() {
+        final Term member = Generator.generateTermWithId(vocabulary.getUri());
+        final TermCollection collection = persistUnorderedCollection(List.of(member));
+
+        assertSnapshotOfCollectionIsFoundBySnapshotOfTerm(collection, member);
+    }
+
+    @Test
+    void findCollectionsWithMemberFindsSnapshotOfOrderedCollectionBySnapshotOfTerm() {
+        final Term member = Generator.generateTermWithId(vocabulary.getUri());
+        final OrderedTermCollection collection = Generator.generateOrderedTermCollection(vocabulary, List.of(member));
+        transactional(() -> {
+            em.persist(member, vocabularyDescriptor);
+            em.persist(collection, vocabularyDescriptor);
+        });
+
+        assertSnapshotOfCollectionIsFoundBySnapshotOfTerm(collection, member);
     }
 }

@@ -907,6 +907,7 @@ public class TermService implements RudService<Term>, ChangeRecordProvider<Term>
     @PreAuthorize("@vocabularyAuthorizationService.canRead(#vocabulary)")
     @Transactional(readOnly = true)
     public List<SkosCollectionDto> findAllCollections(URI termUri, Vocabulary vocabulary) {
+        // TODO: add test checking that title is loaded
         return skosCollectionRepositoryService.findCollectionDtosWithMember(termUri).stream()
                 .filter(c -> c.getVocabulary().equals(vocabulary.getUri()))
                 .map(partial -> skosCollectionRepositoryService
