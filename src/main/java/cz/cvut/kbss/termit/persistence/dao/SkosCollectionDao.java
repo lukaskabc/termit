@@ -668,4 +668,9 @@ public class SkosCollectionDao {
                     "Failed to remove all collections from vocabulary: " + Utils.uriToString(vocabulary.getUri()), e);
         }
     }
+
+    public void flushAndClear() {
+        em.flush();
+        em.clear();
+    }
 }
