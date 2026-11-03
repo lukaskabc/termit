@@ -73,6 +73,11 @@ public class SkosCollectionDto implements HasIdentifier, HasTypes {
     @OWLObjectProperty(iri = SKOS.MEMBER)
     private Set<URI> members = Collections.emptySet();
 
+    @JsonIgnore
+    @Inferred(includeExplicit = false)
+    @OWLObjectProperty(iri = SKOS.MEMBER_LIST)
+    private Set<URI> orderedMembers = Collections.emptySet();
+
     public SkosCollectionDto() {}
 
     public SkosCollectionDto(URI uri, URI vocabulary, Set<String> types) {
